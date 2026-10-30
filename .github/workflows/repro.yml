@@ -35,9 +35,7 @@ jobs:
           $sock = "\\.\pipe\i6181-$env:GITHUB_RUN_ID"
           $d = Start-Process -FilePath $drv -ArgumentList @('serve','--socket',$sock) -NoNewWindow -PassThru
           foreach ($i in 1..60) { & $drv --socket $sock call get_config '{}' *> $null; if ($LASTEXITCODE -eq 0) { break }; Start-Sleep 1 }
-          $wrap = Join-Path $env:RUNNER_TEMP 'drv.cmd'
-          Set-Content $wrap "@`"$drv`" --socket $sock %*"
-          & "${{ github.workspace }}/scratch/i6181/repro.ps1" -Driver $wrap -Layout 0000041E -Label "${{ matrix.label }}-thai"
-          & "${{ github.workspace }}/scratch/i6181/repro.ps1" -Driver $wrap -Layout 0000040C -Label "${{ matrix.label }}-azerty"
-          & "${{ github.workspace }}/scratch/i6181/repro.ps1" -Driver $wrap -Layout 00000409 -Label "${{ matrix.label }}-us"
+          & "${{ github.workspace }}/scratch/i6181/repro.ps1" -Driver $drv -Socket $sock -Layout 0000041E -Label "${{ matrix.label }}-thai"
+          & "${{ github.workspace }}/scratch/i6181/repro.ps1" -Driver $drv -Socket $sock -Layout 0000040C -Label "${{ matrix.label }}-azerty"
+          & "${{ github.workspace }}/scratch/i6181/repro.ps1" -Driver $drv -Socket $sock -Layout 00000409 -Label "${{ matrix.label }}-us"
           Stop-Process -Id $d.Id -Force -ErrorAction SilentlyContinue

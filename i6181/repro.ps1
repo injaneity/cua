@@ -1,5 +1,5 @@
 # Usage: repro.ps1 -Driver <cua-driver.exe> -Layout <KLID> -Label <name>
-param([string]$Driver, [string]$Layout, [string]$Label)
+param([string]$Driver, [string]$Socket, [string]$Layout, [string]$Label)
 $ErrorActionPreference = 'Stop'
 $out = Join-Path $env:RUNNER_TEMP "$Label.txt"
 $target = Start-Process pwsh -ArgumentList @('-STA', '-NoProfile', '-File', (Join-Path $PSScriptRoot 'target.ps1'), '-Layout', $Layout, '-Out', $out) -RedirectStandardError "$out.err" -PassThru
@@ -20,11 +20,11 @@ $calls = @(
 foreach ($c in $calls) {
   $c.pid = $p
   $json = $c | ConvertTo-Json -Compress
-  $r = (& $Driver call press_key $json 2>&1 | Out-String).Trim()
+  $r = ($json | & $Driver --socket $Socket call press_key 2>&1 | Out-String).Trim()
   "press_key $json -> exit $LASTEXITCODE :: $($r -replace '\s+', ' ')"
   Start-Sleep -Milliseconds 400
 }
-$r = (& $Driver call type_text (@{ pid = $p; text = 'T:3a' } | ConvertTo-Json -Compress) 2>&1 | Out-String).Trim()
+$r = ((@{ pid = $p; text = 'T:3a' } | ConvertTo-Json -Compress) | & $Driver --socket $Socket call type_text 2>&1 | Out-String).Trim()
 "type_text -> exit $LASTEXITCODE"
 Start-Sleep -Seconds 1
 $text = [IO.File]::ReadAllText($out, [Text.Encoding]::UTF8)
