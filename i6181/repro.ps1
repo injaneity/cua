@@ -2,8 +2,9 @@
 param([string]$Driver, [string]$Layout, [string]$Label)
 $ErrorActionPreference = 'Stop'
 $out = Join-Path $env:RUNNER_TEMP "$Label.txt"
-$target = Start-Process pwsh -ArgumentList @('-STA', '-NoProfile', '-File', (Join-Path $PSScriptRoot 'target.ps1'), '-Layout', $Layout, '-Out', $out) -PassThru
-foreach ($i in 1..50) { if (Test-Path "$out.layout") { break }; Start-Sleep -Milliseconds 200 }
+$target = Start-Process pwsh -ArgumentList @('-STA', '-NoProfile', '-File', (Join-Path $PSScriptRoot 'target.ps1'), '-Layout', $Layout, '-Out', $out) -RedirectStandardError "$out.err" -PassThru
+foreach ($i in 1..300) { if (Test-Path "$out.layout") { break }; if ($target.HasExited) { break }; Start-Sleep -Milliseconds 200 }
+if (-not (Test-Path "$out.layout")) { "target did not start (exited=$($target.HasExited))"; Get-Content "$out.err" -ErrorAction SilentlyContinue; return }
 Start-Sleep -Seconds 1
 "layout on target thread: $(Get-Content "$out.layout")"
 $p = $target.Id

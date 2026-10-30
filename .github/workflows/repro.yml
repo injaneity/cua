@@ -10,7 +10,7 @@ jobs:
       matrix:
         include:
           - label: base
-            sha: 2d974f1846d65f4b5ca1d7eaee5326018f17d2e0
+            sha: 2d974f1843c7343a70affba9d21e7362979edec3
           - label: fix
             sha: a8e5f3e0a21960a56a445c6a75149557acd1b664
     runs-on: windows-latest
