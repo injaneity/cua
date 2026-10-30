@@ -1,0 +1,43 @@
+name: i6181 press_key layout repro
+on:
+  push:
+    branches: [scratch/i6181-repro]
+  workflow_dispatch:
+jobs:
+  repro:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: base
+            sha: 2d974f1846d65f4b5ca1d7eaee5326018f17d2e0
+          - label: fix
+            sha: a8e5f3e0a21960a56a445c6a75149557acd1b664
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: scratch
+      - uses: actions/checkout@v4
+        with:
+          repository: trycua/cua
+          ref: ${{ matrix.sha }}
+          path: cua
+      - name: Build cua-driver
+        shell: pwsh
+        working-directory: cua/libs/cua-driver/rust
+        run: cargo build --locked -p cua-driver
+      - name: Run repro
+        shell: pwsh
+        run: |
+          $drv = Resolve-Path cua/libs/cua-driver/rust/target/debug/cua-driver.exe
+          $sock = "\\.\pipe\i6181-$env:GITHUB_RUN_ID"
+          $d = Start-Process -FilePath $drv -ArgumentList @('serve','--socket',$sock) -NoNewWindow -PassThru
+          foreach ($i in 1..60) { & $drv --socket $sock call get_config '{}' *> $null; if ($LASTEXITCODE -eq 0) { break }; Start-Sleep 1 }
+          $wrap = Join-Path $env:RUNNER_TEMP 'drv.cmd'
+          Set-Content $wrap "@`"$drv`" --socket $sock %*"
+          & "${{ github.workspace }}/scratch/i6181/repro.ps1" -Driver $wrap -Layout 0000041E -Label "${{ matrix.label }}-thai"
+          & "${{ github.workspace }}/scratch/i6181/repro.ps1" -Driver $wrap -Layout 0000040C -Label "${{ matrix.label }}-azerty"
+          & "${{ github.workspace }}/scratch/i6181/repro.ps1" -Driver $wrap -Layout 00000409 -Label "${{ matrix.label }}-us"
+          Stop-Process -Id $d.Id -Force -ErrorAction SilentlyContinue
