@@ -28,6 +28,11 @@ jobs:
         shell: pwsh
         working-directory: cua/libs/cua-driver/rust
         run: cargo build --locked -p cua-driver
+      - name: platform-windows unit tests
+        if: matrix.label == 'fix'
+        shell: pwsh
+        working-directory: cua/libs/cua-driver/rust
+        run: cargo test --locked -p platform-windows --lib
       - name: Run repro
         shell: pwsh
         run: |
